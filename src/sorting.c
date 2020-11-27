@@ -1,4 +1,4 @@
-#include "sorting.h"
+#include "sortings.h"
 
 int des(char *first, char *second) { return strlen(first) < strlen(second); }
 
