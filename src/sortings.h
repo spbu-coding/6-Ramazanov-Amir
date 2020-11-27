@@ -1,25 +1,28 @@
-#pragma once
+#ifndef SORTING_H
+#define SORTING_H
 
-#include <string.h>
+#include "headers.h"
+#include "vector.h"
 
-#define  MAX_INPUT_STRING_SIZE 1000
+static const int NUM_ARGS = 6;
+static const int MAX_SIZE_STR = 100;
 
-typedef int (*comparator_func_t)(const char*, const char*);
-typedef char** strings_array_t;
-typedef size_t array_size_t;
+enum arguments
+{
+    SIZE = 1,
+    INPUT,
+    OUTPUT,
+    ALG,
+    COMP
+};
 
+int des (char* first, char* second);
+int asc (char* first, char* second);
 
-void bubble(strings_array_t, array_size_t, comparator_func_t);
+void bubble (struct vector* vec, int func_cmp (char*, char*));
+void insertion (struct vector* vec, int func_cmp (char*, char*));
+void merge(struct vector* vec, int func_cmp(char*, char*));
+void quick (struct vector* vec, int func_cmp (char*, char*));
+void radix(struct vector* vec, int comp);
 
-
-void insertion(strings_array_t, array_size_t, comparator_func_t);
-
-
-void merge(strings_array_t, array_size_t, comparator_func_t);
-
-
-void quick(strings_array_t, array_size_t, comparator_func_t);
-
-
-void radix(strings_array_t, array_size_t, comparator_func_t);
-
+#endif // SORTING_H
