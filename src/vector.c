@@ -52,7 +52,7 @@ void push_back(struct vector* vec, char* str, size_t size) {
     vec->data = new_p;
   }
   char* p = (char*)calloc(size, sizeof(char));
-  for (int i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     p[i] = str[i];
   }
   vec->data[vec->size] = p;
