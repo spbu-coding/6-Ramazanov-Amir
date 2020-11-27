@@ -3,7 +3,7 @@
 
 #include <ctype.h>
 #include <fcntl.h>
-#include <io.h>
+#include <stdio.h>
 #include <limits.h>
 #include <locale.h>
 #include <stdio.h>
