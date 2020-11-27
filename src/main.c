@@ -1,5 +1,5 @@
 ﻿#include "headers.h"
-#include "sorting.h"
+#include "sortings.h"
 #include "vector.h"
 
 int main(int argc, char* argv[]) {
