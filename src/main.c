@@ -79,6 +79,7 @@ int main(int argc, char* argv[]) {
   }
   // удалить выделенную память
   remove_vector(&vec);
+  fclose(dst);
   printf("Программа успешно выполнена!\n");
   return 0;
 }
