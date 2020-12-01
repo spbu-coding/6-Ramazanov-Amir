@@ -30,4 +30,4 @@ int checking_parameters(int argc);
 
 int main(int argc, char* argv[]);
 
-#endi
+#endif
