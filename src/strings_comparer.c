@@ -1,4 +1,4 @@
-#include "headers.h"
+#include "string_compare.h"
 
 char* algorithms[] = {"bubble", "insertion", "merge", "quick", "radix"};
 
