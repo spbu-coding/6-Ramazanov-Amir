@@ -141,62 +141,103 @@ void quick_split(strings_array_t array, unsigned int beg, const unsigned int end
     }
 }
 
-void quick(strings_array_t strings_array, array_size_t array_size, comparator_func_t comparator_func) {
-    int left = 0;    
-    int right = array_size - 1;
-    char *mid, *temp;
-    mid = strings_array[array_size / 2];
-    do {    
-        while(comparator_func(strings_array[left],mid)<0) left++;
-        while(comparator_func(strings_array[right],mid)>0) right--;
-        if (left <= right) {     
-            temp = strings_array[left];
-            strings_array[left] = strings_array[right];
-            strings_array[right] = temp;
-            left++;
-            right--;
+void quick(strings_array_t line_array, array_size_t array_size, comparator_func_t comparator) {
+    unsigned mid = array_size / 2, i = 0, j = array_size - 1;
+    do {
+        while (comparator(line_array[mid], line_array[i])) i++;
+        while (comparator(line_array[j], line_array[mid])) j--;
+        if (i <= j) {
+            swap(&line_array[i], &line_array[j]);
+            i++;
+            j--;
         }
-    } while (left <= right);
-    if(right > 0)   
-        quick(strings_array, right + 1, comparator_func);
-    if (left < (int)array_size)       
-        quick(&strings_array[left], array_size - left, comparator_func);
+    } while (i <= j);
+    if (j > 0) quick(line_array, j + 1, comparator);
+    if (i < array_size - 1) quick(&line_array[i], array_size - i, comparator);
 }
 
-void radix(strings_array_t strings_array, array_size_t array_size, comparator_func_t comparator_func) {
-
-    int addit_arr[array_size];
-    int max_addit_arr = 0;
-    for (unsigned int i = 0; i < array_size; i++) {
-        addit_arr[i] = strlen(strings_array[i]) - 1;
-        if (addit_arr[i] > max_addit_arr)  max_addit_arr = addit_arr[i];
+void radix(strings_array_t line_array, array_size_t array_size, comparator_func_t comparator) {
+    unsigned max_len = strlen(line_array[0]);
+    for (unsigned i = 1; i < array_size; i++) {
+        if (strlen(line_array[i]) > max_len) max_len = strlen(line_array[i]);
     }
-    for (int i = (int) max_addit_arr - 1; i >= 0; i--) {
-        unsigned int pocket[256] = {0};
-        for (unsigned int j = 0; j < array_size; j++)
-            if ((int) addit_arr[j] - 1 >= i)
-                pocket[(unsigned int) strings_array[j][i]]++;
-            else pocket[0]++;
+    int radix_num = -1;
+    for (unsigned j = 0; j < max_len; j++) {
+        unsigned i = 0;
+        while (strlen(line_array[i]) <= j) i++;
+        char first = line_array[0][j];
+        for (i++; i < array_size; i++) {
+            if (strlen(line_array[i]) <= j) continue;
+            if (line_array[i][j] != first) break;
+        }
+        if (i < array_size) {
 
-        if (comparator_func("a", "b") < 0)  
-            for (unsigned int j = 1; j < 256; j++)
-                pocket[j] += pocket[j - 1];
-        else
-            for (int j = 256 - 2; j >= 0; j--)
-                pocket[j] += pocket[j + 1];
-
-        char* str_res_arr[array_size];
-        int int_res_arr[array_size];
-        for (int j = (int) array_size - 1; j >= 0; j--) {
-            if ((int) addit_arr[j] - 1 >= i) {
-                str_res_arr[(pocket[(unsigned int) strings_array[j][i]]) - 1] = strings_array[j];
-                int_res_arr[(pocket[(unsigned int) strings_array[j][i]]--) - 1] = addit_arr[j];
-            } else {
-                str_res_arr[(pocket[0]) - 1] = strings_array[j];
-                int_res_arr[(pocket[0]--) - 1] = addit_arr[j];
+            radix_num = j;
+            break;
+        }
+    }
+    if (radix_num == -1) return; //Nothing to sort
+    unsigned symbols[256] = {0};
+    unsigned **lines_via_symbol = malloc(256 * sizeof(unsigned *));
+    if (lines_via_symbol == NULL) {
+        printf("Couldn't allocate memory while sorting!");
+    }
+    for (unsigned i = 0; i < 256; i++) {
+        lines_via_symbol[i] = malloc(array_size * sizeof(unsigned));
+        if (lines_via_symbol[i] == NULL) {
+            printf("Couldn't allocate memory while sorting!", line_array, array_size);
+        }
+    }
+    for (unsigned i = 0; i < array_size; i++) {
+        lines_via_symbol[(unsigned) line_array[i][radix_num]][symbols[(unsigned) line_array[i][radix_num]]] = i;
+        symbols[(unsigned) line_array[i][radix_num]]++;
+    }
+    unsigned k = 0;
+    strings_array_t line_array_copy = malloc(array_size * sizeof(char *));
+    if (line_array_copy == NULL) {
+        printf("Couldn't allocate memory while sorting!");
+    }
+    if (comparator("b", "a")) {
+        for (int i = 0; i < 256; i++) {
+            if (symbols[i] > 0) {
+                strings_array_t buf = malloc(symbols[i] * sizeof(char *));
+                if (buf == NULL) {
+                    printf("Couldn't allocate memory while sorting!");
+                }
+                for (unsigned j = 0; j < symbols[i]; j++) {
+                    buf[j] = line_array[lines_via_symbol[i][j]];
+                }
+                if (symbols[i] > 1) radix(buf, symbols[i], comparator);
+                for (unsigned j = 0; j < symbols[i]; j++) {
+                    line_array_copy[k] = buf[j];
+                    k++;
+                }
+                free(buf);
             }
         }
-        memcpy(strings_array, str_res_arr, array_size * sizeof(char*));
-        memcpy(addit_arr, int_res_arr, array_size * sizeof(size_t));
+    } else {
+        for (int i = 255; i >= 0; i--) {
+            if (symbols[i] > 0) {
+                strings_array_t buf = malloc(symbols[i] * sizeof(char *));
+                if (buf == NULL) {
+                    printf("Couldn't allocate memory while sorting!");
+                }
+                for (unsigned j = 0; j < symbols[i]; j++) {
+
+                    buf[j] = line_array[lines_via_symbol[i][j]];
+                }
+                if (symbols[i] > 1) radix(buf, symbols[i], comparator);
+                for (unsigned j = 0; j < symbols[i]; j++) {
+                    line_array_copy[k] = buf[j];
+                    k++;
+                }
+                free(buf);
+            }
+        }
     }
+    for (unsigned i = 0; i < 256; i++) free(lines_via_symbol[i]);
+    free(lines_via_symbol);
+    memcpy(line_array, line_array_copy, array_size * sizeof(char *));
+    free(line_array_copy);
 }
+
