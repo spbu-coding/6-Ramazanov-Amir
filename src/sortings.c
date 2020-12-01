@@ -1,177 +1,128 @@
 #include "sortings.h"
 #include "headers.h"
 
-void swap(char **str1, char **str2) {
-    char *tmp = *str1;
-    *str1 = *str2;
-    *str2 = tmp;
+#define COUNT_ELEMENTS_IN_CHARSET 128
+
+
+void bubble(strings_array_t arr, array_size_t array_size, comparator_func_t comparator) {
+	for (int i = 0; i < (int) array_size - 1; i++) {
+		for (int j = 0; j < (int) array_size - 1 - i; j++) {
+			if(comparator(arr[j], arr[j + 1]) == 1) {
+				swap(&arr[j], &arr[j + 1]);
+			}
+		}
+	}
 }
 
-void bubble(strings_array_t line_array, array_size_t array_size, comparator_func_t comparator) {
-
-    for (unsigned i = 0; i + 1 < array_size; i++) {
-
-        for (unsigned j = 0; j < array_size - 1; j++) {
-
-            if (comparator(line_array[j], line_array[j + 1])) {
-
-                swap(&line_array[j], &line_array[j + 1]);
-            }
-        }
-    }
+void insertion(strings_array_t arr, array_size_t array_size, comparator_func_t comparator) {
+	for (int i = 1; i < (int) array_size; i++) {
+		int j = i - 1;
+		while(j >= 0 && comparator(arr[j], arr[j + 1]) == 1) {
+			swap(&arr[j], &arr[j + 1]);
+			j--;
+		}
+	}
 }
 
-void insertion(strings_array_t line_array, array_size_t array_size, comparator_func_t comparator) {
-
-    for (unsigned i = 0; i + 1 < array_size; i++) {
-
-        unsigned temp = i;
-        for (unsigned j = i + 1; j < array_size; j++) {
-
-            if (comparator(line_array[temp], line_array[j])) temp = j;
-        }
-        if (temp != i) swap(&line_array[i], &line_array[temp]);
-    }
+void merge(strings_array_t arr, array_size_t array_size, comparator_func_t comparator) {
+	int mid = array_size / 2;
+	if (array_size % 2 == 1) {
+		mid++;
+	}
+	strings_array_t intermediate_arr;
+	intermediate_arr = (strings_array_t)malloc( sizeof(strings_array_t) * array_size);
+	for (int i = 0; i < (int) array_size; ++i) {
+		intermediate_arr[i] = (char *)malloc(sizeof(char) * (MAX_INPUT_STRING_SIZE + 1));
+	}
+	int step;
+	int h = 1; //шаг
+	while (h < (int) array_size) {
+		step = h;
+		int i = 0;
+		int j = mid;
+		int k = 0;
+		while (step <= mid) {
+			while ((i < step) && (j < (int) array_size) && j < (mid + step)) {
+				if (comparator(arr[i], arr[j]) == 2) {
+					intermediate_arr[k] = arr[i];
+					i++; k++; 
+				}
+				else {
+					intermediate_arr[k] = arr[j];
+					j++; k++; 
+				}
+			}
+			while (i < step) {
+				intermediate_arr[k] = arr[i];
+				i++; k++; 
+			}
+			while (j < (mid + step) && (j < (int) array_size)) {
+				intermediate_arr[k] = arr[j];
+				j++; k++;
+			}
+			step += h;
+		}
+		h *= 2;
+		for (int i = 0; i < (int) array_size; i++) {
+			arr[i] = intermediate_arr[i];
+		}
+	}
 }
 
-void merge(strings_array_t line_array, array_size_t array_size, comparator_func_t comparator) {
-
-    if (array_size == 1) return;
-    array_size_t left_size = (array_size - array_size / 2);
-    array_size_t right_size = array_size / 2;
-    strings_array_t array_left = malloc(left_size * sizeof(char *));
-    for (unsigned i = 0; i < left_size; i++) array_left[i] = line_array[i];
-    strings_array_t array_right = malloc(right_size * sizeof(char *));
-    for (unsigned i = left_size; i < array_size; i++) array_right[i - left_size] = line_array[i];
-
-    merge(array_left, left_size, comparator);
-    merge(array_right, right_size, comparator);
-
-    unsigned i = 0, j = 0, k = 0;
-    while (i < left_size && j < right_size) {
-
-        if (comparator(array_left[i], array_right[j])) {
-
-            line_array[k] = array_right[j];
-            j++;
-            k++;
-        } else {
-
-            line_array[k] = array_left[i];
-            i++;
-            k++;
-        }
-    }
-    while (i < left_size) {
-
-        line_array[k] = array_left[i];
-        i++;
-        k++;
-    }
-    while (j < right_size) {
-
-        line_array[k] = array_right[j];
-        j++;
-        k++;
-    }
-    free(array_left);
-    free(array_right);
+int partition(strings_array_t arr, int left, int right, comparator_func_t comparator) {
+	char* pivot = arr[(left + right) / 2];
+	int i = left;
+	int j = right;
+	while (1) {
+		while (comparator(arr[i], pivot) == 2) i++;
+		while (comparator(arr[j], pivot) == 1) j--;
+		if (i >= j) {
+			if (comparator == string_compare_asc) return j;
+			else return i;
+		} 
+		swap(&arr[i], &arr[j]);
+	}
 }
 
-void quick(strings_array_t line_array, array_size_t array_size, comparator_func_t comparator) {
-
-    unsigned mid = array_size / 2, i = 0, j = array_size - 1;
-    do {
-
-        while (comparator(line_array[mid], line_array[i])) i++;
-        while (comparator(line_array[j], line_array[mid])) j--;
-        if (i <= j) {
-
-            swap(&line_array[i], &line_array[j]);
-            i++;
-            j--;
-        }
-    } while (i <= j);
-    if (j > 0) quick(line_array, j + 1, comparator);
-    if (i < array_size - 1) quick(&line_array[i], array_size - i, comparator);
+void quick1(strings_array_t arr, int left, int right, comparator_func_t comparator) {
+	if (left < right) {
+		int it = partition(arr, left, right, comparator);
+		quick1(arr, left, it - 1, comparator);
+		quick1(arr, it + 1, right, comparator);
+	}
 }
 
-void radix(strings_array_t line_array, array_size_t array_size, comparator_func_t comparator) {
+void quick(strings_array_t arr, array_size_t array_size, comparator_func_t comparator) {
+	quick1(arr, 0, array_size - 1, comparator);
+}
 
-    unsigned max_len = strlen(line_array[0]);
-    for (unsigned i = 1; i < array_size; i++) {
+void radix(strings_array_t arr, array_size_t array_size, comparator_func_t comparator) {
+	int max_string_size = strlen(arr[0]);
+	for (int i = 1; i < (int) array_size; i++) {
+		if ((int) strlen(arr[i]) > max_string_size) max_string_size = strlen(arr[i]);
+	}
+	
+	for (int i = max_string_size - 1; i >= 0; i--) {
+		char *intermediate_arr[array_size];
+		int count[COUNT_ELEMENTS_IN_CHARSET] = { 0 };
 
-        if (strlen(line_array[i]) > max_len) max_len = strlen(line_array[i]);
-    }
-    int radix_num = -1;
-    for (unsigned j = 0; j < max_len; j++) {
-
-        unsigned i = 0;
-        while (strlen(line_array[i]) <= j) i++;
-        char first = line_array[0][j];
-        for (i++; i < array_size; i++) {
-
-            if (strlen(line_array[i]) <= j) continue;
-            if (line_array[i][j] != first) break;
-        }
-        if (i < array_size) {
-
-            radix_num = j;
-            break;
-        }
-    }
-    if (radix_num == -1) return; 
-    unsigned symbols[256] = {0};
-    unsigned **lines_via_symbol = malloc(256 * sizeof(unsigned *));
-    if (lines_via_symbol == NULL) {
-        for (unsigned i = 0; i < 256; i++) {
-            lines_via_symbol[i] = malloc(array_size * sizeof(unsigned));
-        }
-        for (unsigned i = 0; i < array_size; i++) {
-            lines_via_symbol[(unsigned) line_array[i][radix_num]][symbols[(unsigned) line_array[i][radix_num]]] = i;
-            symbols[(unsigned) line_array[i][radix_num]]++;
-        }
-
-        unsigned k = 0;
-        strings_array_t line_array_copy = malloc(array_size * sizeof(char *));
-        if (comparator("b", "a")) {
-            for (int i = 0; i < 256; i++) {
-                if (symbols[i] > 0) {
-                    strings_array_t buf = malloc(symbols[i] * sizeof(char *));
-                    for (unsigned j = 0; j < symbols[i]; j++) {
-                        buf[j] = line_array[lines_via_symbol[i][j]];
-                    }
-                    if (symbols[i] > 1) radix(buf, symbols[i], comparator);
-                    for (unsigned j = 0; j < symbols[i]; j++) {
-                        line_array_copy[k] = buf[j];
-                        k++;
-                    }
-                    free(buf);
-                }
-            }
-        } else {
-
-            for (int i = 255; i >= 0; i--) {
-
-                if (symbols[i] > 0) {
-
-                    strings_array_t buf = malloc(symbols[i] * sizeof(char *));
-                    for (unsigned j = 0; j < symbols[i]; j++) {
-                        buf[j] = line_array[lines_via_symbol[i][j]];
-                    }
-                    if (symbols[i] > 1) radix(buf, symbols[i], comparator);
-                    for (unsigned j = 0; j < symbols[i]; j++) {
-
-                        line_array_copy[k] = buf[j];
-                        k++;
-                    }
-                    free(buf);
-                }
-            }
-        }
-        for (unsigned i = 0; i < 256; i++) free(lines_via_symbol[i]);
-        free(lines_via_symbol);
-        memcpy(line_array, line_array_copy, array_size * sizeof(char *));
-        free(line_array_copy);
-    }
+		for (int j = 0; j < (int) array_size; j++) {
+			count[(int) arr[j][i]]++;
+		}
+		for (int j = 1; j < COUNT_ELEMENTS_IN_CHARSET; j++) {
+			count[j] += count[j - 1];
+		}
+		for (int j = array_size - 1; j >= 0; j--) {
+			intermediate_arr[count[(int) arr[j][i]] - 1] = arr[j];
+			count[(int) arr[j][i]]--;
+		}
+		for (int j = array_size - 1; j >= 0; j--) {
+			if (i > 0 || comparator == string_compare_asc) {
+				arr[j] = intermediate_arr[j];
+			}
+			else {
+				arr[array_size - 1 - j] = intermediate_arr[j];
+			}
+		}
+	}
 }
