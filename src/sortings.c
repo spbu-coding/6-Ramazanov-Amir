@@ -1,5 +1,5 @@
 #include "sortings.h"
-#include "headers.h"
+#include "string_compare.h"
 
 #define COUNT_ELEMENTS_IN_CHARSET 128
 
