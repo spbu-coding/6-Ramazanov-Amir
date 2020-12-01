@@ -1,5 +1,5 @@
-#ifndef HEADERS_H
-#define HEADERS_H
+#ifndef STRING_COMPARE
+#define STRING_COMPARE
 
 #include <stdio.h>
 #include <stdlib.h>
