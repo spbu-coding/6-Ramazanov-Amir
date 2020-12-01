@@ -141,13 +141,62 @@ void quick_split(strings_array_t array, unsigned int beg, const unsigned int end
     }
 }
 
-void quick(strings_array_t array, array_size_t size, comparator_func_t cmp) {
-    quick_split(array, 0, size, cmp);
+void quick(strings_array_t strings_array, array_size_t array_size, comparator_func_t comparator_func) {
+    int left = 0;    
+    int right = array_size - 1;
+    char *mid, *temp;
+    mid = strings_array[array_size / 2];
+    do {    
+        while(comparator_func(strings_array[left],mid)<0) left++;
+        while(comparator_func(strings_array[right],mid)>0) right--;
+        if (left <= right) {     
+            temp = strings_array[left];
+            strings_array[left] = strings_array[right];
+            strings_array[right] = temp;
+            left++;
+            right--;
+        }
+    } while (left <= right);
+    if(right > 0)   
+        quick(strings_array, right + 1, comparator_func);
+    if (left < (int)array_size)       
+        quick(&strings_array[left], array_size - left, comparator_func);
 }
 
-void radix(strings_array_t array, array_size_t size, comparator_func_t cmp) {
-    size_t max = get_max_length(array, size);
-    for (size_t digit = max; digit > 0; digit--) {
-        count_sort(array, size, digit - 1, cmp);
+void radix(strings_array_t strings_array, array_size_t array_size, comparator_func_t comparator_func) {
+
+    int addit_arr[array_size];
+    int max_addit_arr = 0;
+    for (unsigned int i = 0; i < array_size; i++) {
+        addit_arr[i] = strlen(strings_array[i]) - 1;
+        if (addit_arr[i] > max_addit_arr)  max_addit_arr = addit_arr[i];
+    }
+    for (int i = (int) max_addit_arr - 1; i >= 0; i--) {
+        unsigned int pocket[256] = {0};
+        for (unsigned int j = 0; j < array_size; j++)
+            if ((int) addit_arr[j] - 1 >= i)
+                pocket[(unsigned int) strings_array[j][i]]++;
+            else pocket[0]++;
+
+        if (comparator_func("a", "b") < 0)  
+            for (unsigned int j = 1; j < 256; j++)
+                pocket[j] += pocket[j - 1];
+        else
+            for (int j = 256 - 2; j >= 0; j--)
+                pocket[j] += pocket[j + 1];
+
+        char* str_res_arr[array_size];
+        int int_res_arr[array_size];
+        for (int j = (int) array_size - 1; j >= 0; j--) {
+            if ((int) addit_arr[j] - 1 >= i) {
+                str_res_arr[(pocket[(unsigned int) strings_array[j][i]]) - 1] = strings_array[j];
+                int_res_arr[(pocket[(unsigned int) strings_array[j][i]]--) - 1] = addit_arr[j];
+            } else {
+                str_res_arr[(pocket[0]) - 1] = strings_array[j];
+                int_res_arr[(pocket[0]--) - 1] = addit_arr[j];
+            }
+        }
+        memcpy(strings_array, str_res_arr, array_size * sizeof(char*));
+        memcpy(addit_arr, int_res_arr, array_size * sizeof(size_t));
     }
 }
