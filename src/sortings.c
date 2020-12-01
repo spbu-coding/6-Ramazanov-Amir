@@ -108,7 +108,7 @@ void merge(strings_array_t a, array_size_t n, comparator_func_t cmp) {
         }
         step *= 2;
     }
-    for (array_size_t i = 0; i < n; ++i) {
+    for (array_size_t i = 0; i <= n; ++i) {
         free(temp[i]);
     }
     free(temp);
