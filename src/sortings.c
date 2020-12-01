@@ -71,49 +71,42 @@ void insertion(strings_array_t array, array_size_t size, comparator_func_t cmp) 
     }
 }
 
-void merge(strings_array_t a, array_size_t n, comparator_func_t cmp) {
-    array_size_t step = 1;
-    strings_array_t  temp = malloc(n * sizeof(char *));
-    for (array_size_t i = 0; i < n; ++i) {
-        temp[i] = malloc(sizeof(char) * MAX_INPUT_STRING_SIZE);
-    }
-    while (step < n) {
-        array_size_t index = 0;
-        array_size_t l = 0;
-        array_size_t m = l + step;
-        array_size_t r = l + step * 2;
-        do {
-            m = m < n ? m : n;
-            r = r < n ? r : n;
-            array_size_t i1 = l, i2 = m;
-            for (; i1 < m && i2 < r; ) {
-                if (cmp(a[i1], a[i2]) < 0) {
-                    temp[index++] = a[i1++];
-                } else {
-                    temp[index++] = a[i2++];
-                }
-            }
-            while (i1 < m) {
-                temp[index++] = a[i1++];
-            }
-            while (i2 < r) {
-                temp[index++] = a[i2++];
-            }
-            l += step * 2;
-            m += step * 2;
-            r += step * 2;
-        } while (l < n);
-        for (array_size_t i = 0; i < n; i++) {
-            a[i] = temp[i];
-        }
-        step *= 2;
-    }
-    for (array_size_t i = 0; i <= n; ++i) {
-        free(temp[i]);
-    }
-    free(temp);
-}
+void merge(strings_array_t line_array, array_size_t array_size, comparator_func_t comparator) {
 
+    if (array_size == 1) return;
+    array_size_t left_size = (array_size - array_size / 2);
+    array_size_t right_size = array_size / 2;
+    strings_array_t array_left = malloc(left_size * sizeof(char *));
+    for (unsigned i = 0; i < left_size; i++) array_left[i] = line_array[i];
+    strings_array_t array_right = malloc(right_size * sizeof(char *));
+    for (unsigned i = left_size; i < array_size; i++) array_right[i - left_size] = line_array[i];
+    merge(array_left, left_size, comparator);
+    merge(array_right, right_size, comparator);
+    unsigned i = 0, j = 0, k = 0;
+    while (i < left_size && j < right_size) {
+        if (comparator(array_left[i], array_right[j])) {
+            line_array[k] = array_right[j];
+            j++;
+            k++;
+        } else {
+            line_array[k] = array_left[i];
+            i++;
+            k++;
+        }
+    }
+    while (i < left_size) {
+        line_array[k] = array_left[i];
+        i++;
+        k++;
+    }
+    while (j < right_size) {
+        line_array[k] = array_right[j];
+        j++;
+        k++;
+    }
+    free(array_left);
+    free(array_right);
+}
 void quick_split(strings_array_t array, unsigned int beg, const unsigned int end, comparator_func_t cmp) {
     while (beg < end) {
         if ((array[beg] <= array[(beg + end - 1) / 2] && array[(beg + end - 1) / 2] <= array[end - 1]) || (array[end - 1] <= array[(beg + end - 1) / 2] && array[(beg + end - 1) / 2] <= array[beg])) {
