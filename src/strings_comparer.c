@@ -1,167 +1,173 @@
-#include "string_compare.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "sortings.h"
 
-char* algorithms[] = {"bubble", "insertion", "merge", "quick", "radix"};
+#define error(...) (fprintf(stderr, __VA_ARGS__))
 
-char* comparators[] = {"asc", "des"};
+typedef void (*sorting_algorithm_t)(strings_array_t, array_size_t, comparator_func_t);
 
-void swap(char** first_str, char** second_str) {
-	char* for_swap = *first_str;
-    *first_str = *second_str;
-    *second_str = for_swap;
+int asc(const char *str1, const char *str2) {
+    return strcmp(str1, str2);
 }
 
-int string_compare_asc(const char* string1, const char* string2) {
-	int string_length;
-	if (strlen(string1) > strlen(string2)) string_length = strlen(string2);
-	else string_length = strlen(string1);
-	for (int i = 0; i < string_length; i++) {
-		if (string1[i] > string2[i]) {
-			return 1;
-		}
-		if (string1[i] < string2[i]) {
-			return 2;
-		}
-	}
-	if (strlen(string1) > strlen(string2)) return 1;         //необязательно, можно удалить
-	if (strlen(string1) < strlen(string2)) return 2;
-	return 0;
+int des(const char *str1, const char *str2) {
+    return -strcmp(str1, str2);
 }
 
-int string_compare_des(const char* string1, const char* string2) {
-	int string_length;
-	if (strlen(string1) > strlen(string2)) string_length = strlen(string2);
-	else string_length = strlen(string1);
-	for (int i = 0; i < string_length; i++) {
-		if (string1[i] > string2[i]) {
-			return 2;
-		}
-		if (string1[i] < string2[i]) {
-			return 1;
-		}
-	}
-	if (strlen(string1) > strlen(string2)) return 2;         //необязательно, можно удалить
-	if (strlen(string1) < strlen(string2)) return 1;
-	return 0;
+void free_strings_array(strings_array_t strings_array, size_t size) {
+    for(size_t i = 0; i < size; i++)
+        free(strings_array[i]);
+    free(strings_array);
+    strings_array = NULL;
 }
 
-void free_arr(strings_array_t arr, int strings_count) {
-	for (int i = 0; i < strings_count; ++i) {
-		free(arr[i]);
-	}
-	free(arr);
+int get_strings_count(char *arg, size_t *strings_count) {
+    char *pEnd;
+    *strings_count = strtoull(arg, &pEnd, 10);
+
+    if (*pEnd != '\0') return -1;
+    else return 0;
 }
 
-strings_array_t Read_file(char* filename, int* return_value, int strings_count) {
-	FILE* input_file;
-	if ((input_file = fopen(filename, "rb")) == NULL) {
-        printf("Can not open file %s.\n", filename);
-        *return_value = -1;
-        return NULL;
-    }
-    strings_array_t arr;
-    arr = (strings_array_t)malloc( sizeof(strings_array_t) * strings_count);
-    if (!arr) {
-    	fclose(input_file);
-    	*return_value = -1;
-		return NULL;
-	}
-	for (int i = 0; i < strings_count; ++i) {
-		arr[i] = (char *)calloc(sizeof(char), (MAX_INPUT_STRING_SIZE + 1));
-		if (!arr[i]) {
-			free_arr(arr, i);
-			fprintf(stderr, "Cannot allocate memory for %d string \n", i);
-			fclose(input_file);
-			*return_value = -1;
-			return NULL;
-		}
-		if (fgets(arr[i], MAX_INPUT_STRING_SIZE + 1, input_file) == NULL) {
-			fprintf(stderr, "The number of strings in input file is less than the specified number\n");
-			fclose(input_file);
-			*return_value = -1;
-			return NULL;
-		}
-	}
-	fclose(input_file);
+sorting_algorithm_t get_sorting_algorithm(char *arg) {
+    sorting_algorithm_t sorting_algorithm = NULL;
 
-	int string_length = strlen(arr[strings_count - 1]);
-	if (arr[strings_count - 1][string_length - 1] != '\n') {
-		if (string_length == MAX_INPUT_STRING_SIZE) {
-            fprintf(stderr, "The last line contains an unsupported number of characters)\n");
-            *return_value = -1;
-			return NULL;
+    if(strcmp(arg, "bubble") == 0) sorting_algorithm = bubble;
+    else if(strcmp(arg, "insertion") == 0) sorting_algorithm = insertion;
+    else if(strcmp(arg, "merge") == 0) sorting_algorithm = merge;
+    else if(strcmp(arg, "quick") == 0) sorting_algorithm = quick;
+    else if(strcmp(arg, "radix") == 0) sorting_algorithm = radix;
+
+    return sorting_algorithm;
+}
+
+comparator_func_t get_comparator(char *arg) {
+    comparator_func_t comparator = NULL;
+
+    if(strcmp(arg, "asc") == 0) comparator = asc;
+    else if(strcmp(arg, "des") == 0) comparator = des;
+
+    return comparator;
+}
+
+int get_strings_from_file(FILE* file, size_t max_string_length, size_t strings_count, strings_array_t strings_array) {
+    size_t i;
+    for(i = 0; i < strings_count && !feof(file); i++) {
+        if(fgets(strings_array[i], max_string_length, file) == NULL) {
+            error("fgets() error in get_strings_from_file\n");
+            return -3;
         }
-        arr[strings_count - 1][string_length] = '\n';
-        arr[strings_count - 1][string_length + 1] = '\0';
-	}
-
-	return arr;
-}
-
-void Write_file(char* filename, int* return_value, int strings_count,  strings_array_t arr) {
-	FILE* output_file;
-	if ((output_file = fopen(filename, "wb")) == NULL) {
-        printf("Can not create file %s.\n", filename);
-        *return_value = -1;
-        return;
     }
-    for (int i = 0; i < strings_count; ++i) {
-		fputs( arr[i], output_file );
-	}
-	fclose(output_file);
+    if(i < strings_count && feof(file)) {
+        error("Strings count arg > strings count in file\n");
+        return -1;
+    }
+    else
+        return 0;
 }
 
-int checking_parameters(int argc) {
-	if (argc != 6) {
-		printf("Error! Call function like this: \n");
-		printf("1. The number of strings to sort\n");
-		printf("2. The name of the input file\n");
-		printf("3. The name of the output file\n");
-		printf("4. The name of the algorithm\n");
-		printf("5. The name of the comparator\n");
-		return -1;
-	}
-	return 0;
+int put_strings_in_file(FILE* file, size_t strings_count, strings_array_t strings_array) {
+    if(strings_count > 0) {
+        for(size_t i = 0; i < strings_count; i++) {
+            if(fputs(strings_array[i], file) == EOF) {
+                error("Error with fputs() in output file\n");
+                return -1;
+            }
+            if(strcspn(strings_array[i], "\n") == strlen(strings_array[i])) {
+                if(fputs("\n", file) == EOF) {
+                    error("Error with fputs() in output file\n");
+                    return -1;
+                }
+            }
+        }
+    }
+    else {
+        if(fputs("\n", file) == EOF) {
+            error("Error with fputs() in output file\n");
+            return -1;
+        }
+    }
+
+    return 0;
 }
 
-int main(int argc, char* argv[]) {
-	int return_value = 0;
-	comparator_func_t comparator;
-	if (checking_parameters(argc) != 0) return -1;
-	strings_array_t arr = Read_file(argv[2], &return_value, atoi(argv[1]));
-	if (return_value != 0) return -1;
+int main(int argc, char **argv) {
 
-	if (strncmp(argv[5], comparators[0], ASC_LENGTH) == 0) {
-		comparator = string_compare_asc;
-	}
-	else if (strncmp(argv[5], comparators[1], DES_LENGTH) == 0) {
-		comparator = string_compare_des;
-	}
-	else {
-		printf("Error! Available comparators: asc, des.\n");
-		return -1;
-	}
+    if (argc != 6) {
+        error("Expected 5 command line arguments\n");
+        return -1;
+    }
 
-	if (strncmp(argv[4], algorithms[0], BUBBLE_LENGTH) == 0) {
-		bubble(arr, atoi(argv[1]), comparator);
-	}
-	else if (strncmp(argv[4], algorithms[1], INSERTION_LENGTH) == 0) {
-		insertion(arr, atoi(argv[1]), comparator);
-	}
-	else if (strncmp(argv[4], algorithms[2], MERGE_LENGTH) == 0) {
-		merge(arr, atoi(argv[1]), comparator);
-	}
-	else if (strncmp(argv[4], algorithms[3], QUICK_LENGTH) == 0) {
-		quick(arr, atoi(argv[1]), comparator);
-	}
-	else if (strncmp(argv[4], algorithms[4], RADIX_LENGTH) == 0) {
-		radix(arr, atoi(argv[1]), comparator);
-	}
-	else {
-		printf("Error! Available algorithms: bubble, insertion, merge, quick, radix.\n");
-		return -1;
-	}
+    size_t strings_count;
+    if (get_strings_count(argv[1], &strings_count) != 0) {
+        error("Strings count must be >= 0 unsigned integer\n");
+        return -1;
+    }
 
-	Write_file(argv[3], &return_value, atoi(argv[1]), arr);
-	if (return_value != 0) return -1;
-	return 0;
+    sorting_algorithm_t sorting_algorithm = get_sorting_algorithm(argv[4]);
+    if(sorting_algorithm == NULL) {
+        error("Not valid sorting algorithm");
+        return -1;
+    }
+
+    comparator_func_t comparator = get_comparator(argv[5]);
+    if(comparator == NULL) {
+        error("Not valid comparator");
+        return -1;
+    }
+
+    strings_array_t strings_array = (char**)malloc(sizeof(char*) * strings_count);
+    if(strings_array == NULL) {
+        error("Error with allocation memory error in main()");
+        return -1;
+    }
+    else {
+        for(size_t i = 0; i < strings_count; i++) {
+            strings_array[i] = (char*)malloc(sizeof(char) * MAX_INPUT_STRING_SIZE);
+            if(strings_array[i] == NULL) {
+                free_strings_array(strings_array, i);
+                error("Error with allocation memory error in main()");
+                return -1;
+            }
+        }
+    }
+
+    FILE *in_file = fopen(argv[2], "r");
+    if(in_file == NULL) {
+        free_strings_array(strings_array, strings_count);
+        error("Error with fopen() of input file\n");
+        return -1;
+    }
+
+    if(get_strings_from_file(in_file, MAX_INPUT_STRING_SIZE, strings_count, strings_array) != 0) {
+        fclose(in_file);
+        free_strings_array(strings_array, strings_count);
+        error("Error with reading file\n");
+        return -1;
+    }
+
+    sorting_algorithm(strings_array, strings_count, comparator);
+
+    FILE* out_file = fopen(argv[3], "w");
+    if(out_file == NULL) {
+        fclose(in_file);
+        free_strings_array(strings_array, strings_count);
+        error("Error with fopen() of output file\n");
+        return -1;
+    }
+
+    if(put_strings_in_file(out_file, strings_count, strings_array) != 0) {
+        fclose(in_file);
+        fclose(out_file);
+        free_strings_array(strings_array, strings_count);
+        error("Error with writing file\n");
+        return -1;
+    }
+
+    fclose(in_file);
+    fclose(out_file);
+    free_strings_array(strings_array, strings_count);
+
+    return 0;
 }
